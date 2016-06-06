@@ -19,7 +19,7 @@ public class MinerJob {
     @Autowired
     private TravisService travisService;
 
-    @Scheduled(fixedDelay = 5000, initialDelay = 0)
+    @Scheduled(fixedDelay = 20_000, initialDelay = 0)
     public void mine() {
         TravisReposDTO travisReposDTO = travisService.get("/repos/", TravisReposDTO.class);
 
