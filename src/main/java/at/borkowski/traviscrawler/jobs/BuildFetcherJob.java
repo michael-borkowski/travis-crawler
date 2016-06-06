@@ -1,5 +1,6 @@
 package at.borkowski.traviscrawler.jobs;
 
+import at.borkowski.traviscrawler.dto.TravisBuildDTO;
 import at.borkowski.traviscrawler.dto.TravisBuildsDTO;
 import at.borkowski.traviscrawler.dto.TravisCommitDTO;
 import at.borkowski.traviscrawler.entities.RepoBuild;
@@ -11,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,10 +31,43 @@ public class BuildFetcherJob {
         System.out.println("[builds] crawling over " + repos.size() + " repos");
 
         for (TravisRepo repo : repos) {
+            List<RepoBuild> builds = repo.getBuildsStatus().getBuilds();
             if (repo.getBuildsStatus().isFirstReached()) {
-                // todo
+                String latestBuild = builds.get(0).getNumber();
+
+                try {
+                    List<RepoBuild> catchingUpBuilds = new LinkedList<>();
+                    boolean caughtUp = false;
+
+                    TravisBuildsDTO buildsDto = travisService.get("/repos/" + repo.getSlug() + "/builds", TravisBuildsDTO.class);
+
+                    do {
+                        Map<Long, TravisCommitDTO> commits = build(buildsDto.commits);
+                        String lastNumber = null;
+                        if (buildsDto.builds.size() == 0)
+                            System.out.println("[builds] WEIRD, didn't reach end ... " + repo.getSlug());
+
+                        for (TravisBuildDTO build : buildsDto.builds) {
+                            if (build.getNumber().equals(latestBuild) || isIn(repo.getBuildsStatus().getBuilds(), build.getNumber())) {
+                                caughtUp = true;
+                                break;
+                            }
+                            if (build.getFinishedAt() != null)
+                                catchingUpBuilds.add(new RepoBuild(build, commits));
+                            lastNumber = build.getNumber();
+                        }
+
+                        if (!caughtUp)
+                            buildsDto = travisService.get("/repos/" + repo.getSlug() + "/builds?after_number=" + lastNumber, TravisBuildsDTO.class);
+                    }
+                    while (!caughtUp);
+
+                    for (int i = catchingUpBuilds.size() - 1; i >= 0; i--) builds.add(0, catchingUpBuilds.get(i));
+                    travisRepoService.save(repo);
+                } catch (Exception ex) {
+                    System.out.println("[builds] exception while fetching newest " + repo.getSlug());
+                }
             } else {
-                List<RepoBuild> builds = repo.getBuildsStatus().getBuilds();
                 TravisBuildsDTO buildsDto;
                 String urlSuffix = builds.size() > 0 ? "?after_number=" + builds.get(builds.size() - 1).getNumber() : "";
                 try {
@@ -48,7 +83,7 @@ public class BuildFetcherJob {
                 if (buildsDto.builds.size() == 0) repo.getBuildsStatus().setFirstReached();
                 else buildsDto.builds.stream()
                         .filter(build -> build.getFinishedAt() != null)
-                        .forEach(build -> repo.getBuildsStatus().getBuilds().add(new RepoBuild(build, commits)));
+                        .forEach(build -> builds.add(new RepoBuild(build, commits)));
                 travisRepoService.save(repo);
 
                 buildsAdded += buildsDto.builds.size();
@@ -56,6 +91,10 @@ public class BuildFetcherJob {
         }
 
         System.out.println("[builds] added " + buildsAdded + " builds");
+    }
+
+    private boolean isIn(List<RepoBuild> builds, String number) {
+        return builds.stream().filter(x -> x.getNumber().equals(number)).findAny().isPresent();
     }
 
     private Map<Long, TravisCommitDTO> build(List<TravisCommitDTO> commits) {
