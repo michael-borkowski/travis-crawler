@@ -26,16 +26,22 @@ public class BuildFetcherJob {
     public void fetchBuilds() {
         List<TravisRepo> repos = travisRepoService.findSome(50);
         int buildsAdded = 0;
+        System.out.println("[builds] crawling over " + repos.size() + " repos");
 
         for (TravisRepo repo : repos) {
             if (repo.getBuildsStatus().isFirstReached()) {
                 // todo
             } else {
-                System.out.println("[builds] " + repo.getSlug());
                 List<RepoBuild> builds = repo.getBuildsStatus().getBuilds();
                 TravisBuildsDTO buildsDto;
                 String urlSuffix = builds.size() > 0 ? "?after_number=" + builds.get(builds.size() - 1).getNumber() : "";
-                buildsDto = travisService.get("/repos/" + repo.getSlug() + "/builds" + urlSuffix, TravisBuildsDTO.class);
+                try {
+                    buildsDto = travisService.get("/repos/" + repo.getSlug() + "/builds" + urlSuffix, TravisBuildsDTO.class);
+                } catch (Exception ex) {
+                    System.out.println("[builds] exception while fetching " + repo.getSlug());
+                    ex.printStackTrace();
+                    continue;
+                }
 
                 Map<Long, TravisCommitDTO> commits = build(buildsDto.commits);
 

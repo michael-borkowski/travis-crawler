@@ -18,6 +18,8 @@ public class TravisService {
 
     private RestTemplate restTemplate = new RestTemplate();
 
+    private long callCount;
+
     public <T> T get(String url, Class<T> clazz) {
         return exchange(GET, url, clazz);
     }
@@ -29,6 +31,7 @@ public class TravisService {
         headers.set("Accept", "application/vnd.travis-ci.2+json");
         HttpEntity entity = new HttpEntity(headers);
         HttpEntity<T> response = restTemplate.exchange("https://api.travis-ci.org" + url, method, entity, clazz);
+        callCount++;
         return response.getBody();
     }
 
@@ -44,5 +47,9 @@ public class TravisService {
             Thread.sleep(100);
         } catch (InterruptedException ignored) {
         }
+    }
+
+    public long getCallCount() {
+        return callCount;
     }
 }
