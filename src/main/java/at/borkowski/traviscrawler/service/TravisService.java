@@ -13,7 +13,7 @@ import static org.springframework.http.HttpMethod.GET;
 public class TravisService {
     // this is taken from https://github.com/travis-ci/travis-api/commit/b59fa6cd9404e15c5e21d1c9b97f64ebfeb9ce4f
     // which was found at http://stackoverflow.com/questions/32608501/what-are-travis-ci-api-rate-limits
-    private static final long INTERVAL = 60_000 / 60 * 10 / 8;
+    private static final long INTERVAL = 60_000 / 60 * 10 / 9;
 
     private final Object lock = new Object();
     private long nextClear = currentTimeMillis();

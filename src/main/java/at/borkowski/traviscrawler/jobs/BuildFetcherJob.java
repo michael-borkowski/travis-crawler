@@ -38,14 +38,17 @@ public class BuildFetcherJob {
                 try {
                     List<RepoBuild> catchingUpBuilds = new LinkedList<>();
                     boolean caughtUp = false;
+                    boolean paged = false;
 
                     TravisBuildsDTO buildsDto = travisService.get("/repos/" + repo.getSlug() + "/builds", TravisBuildsDTO.class);
 
                     do {
                         Map<Long, TravisCommitDTO> commits = build(buildsDto.commits);
                         String lastNumber = null;
-                        if (buildsDto.builds.size() == 0)
-                            System.out.println("[builds] WEIRD, didn't reach end ... " + repo.getSlug());
+                        if (buildsDto.builds.size() == 0) {
+                            if (paged) System.out.println("[builds] WEIRD, didn't reach end ... " + repo.getSlug());
+                            break;
+                        }
 
                         for (TravisBuildDTO build : buildsDto.builds) {
                             if (build.getNumber().equals(latestBuild) || isIn(repo.getBuildsStatus().getBuilds(), build.getNumber())) {
@@ -59,6 +62,7 @@ public class BuildFetcherJob {
 
                         if (!caughtUp)
                             buildsDto = travisService.get("/repos/" + repo.getSlug() + "/builds?after_number=" + lastNumber, TravisBuildsDTO.class);
+                        paged = true;
                     }
                     while (!caughtUp);
 
