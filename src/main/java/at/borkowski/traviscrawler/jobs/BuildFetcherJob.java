@@ -33,7 +33,7 @@ public class BuildFetcherJob {
         for (TravisRepo repo : repos) {
             List<RepoBuild> builds = repo.getBuildsStatus().getBuilds();
             if (repo.getBuildsStatus().isFirstReached()) {
-                String latestBuild = builds.get(0).getNumber();
+                String latestBuild = builds.size() == 0 ? null : builds.get(0).getNumber();
 
                 try {
                     List<RepoBuild> catchingUpBuilds = new LinkedList<>();
@@ -51,7 +51,7 @@ public class BuildFetcherJob {
                         }
 
                         for (TravisBuildDTO build : buildsDto.builds) {
-                            if (build.getNumber().equals(latestBuild) || isIn(repo.getBuildsStatus().getBuilds(), build.getNumber())) {
+                            if (latestBuild == null || build.getNumber().equals(latestBuild) || isIn(repo.getBuildsStatus().getBuilds(), build.getNumber())) {
                                 caughtUp = true;
                                 break;
                             }

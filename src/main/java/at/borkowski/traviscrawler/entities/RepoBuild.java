@@ -55,6 +55,10 @@ public class RepoBuild {
         return number;
     }
 
+    public Commit getCommit() {
+        return commit;
+    }
+
     public static class Commit {
         private long id;
         private String sha;
@@ -67,6 +71,9 @@ public class RepoBuild {
         private String committerEmail;
         private String compareUrl;
         private Long pullRequestNumber;
+
+        private RepoCommitStatistic statistic;
+        private RepoCommitStatistic stats = null;
 
         public Commit() {
         }
@@ -83,6 +90,18 @@ public class RepoBuild {
             this.committerEmail = travisCommitDTO.getCommitterEmail();
             this.compareUrl = travisCommitDTO.getCompareUrl();
             this.pullRequestNumber = travisCommitDTO.getPullRequestNumber();
+        }
+
+        public String getSha() {
+            return sha;
+        }
+
+        public void setStats(RepoCommitStatistic stats) {
+            this.stats = stats;
+        }
+
+        public RepoCommitStatistic getStats() {
+            return stats;
         }
     }
 }

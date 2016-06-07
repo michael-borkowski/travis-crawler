@@ -15,6 +15,8 @@ public class GitRepo {
                 .setCloneAllBranches(false).setCloneSubmodules(true)
                 .setDirectory(localDirectory.toFile()).setNoCheckout(true).setURI(uri).call();
 
+        git.fetch().call();
+
         return new GitRepoHandle(git, true);
     }
 }

@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
-public class GitRepoHandle {
+public class GitRepoHandle implements AutoCloseable {
     private final boolean deleteOnFinalize;
     private final Git git;
     private boolean deleted = false;
@@ -73,5 +73,10 @@ public class GitRepoHandle {
             });
         } catch (Throwable ignored) {
         }
+    }
+
+    @Override
+    public void close() {
+        delete();
     }
 }
