@@ -32,44 +32,42 @@ public class CommitStatisticsJob {
         someRepos = filterReposWithAllCommits(someRepos);
 
         Map<TravisRepo, Set<RepoBuild.Commit>> commits = new HashMap<>();
-        Map<TravisRepo, Set<String>> shas = new HashMap<>();
         for (TravisRepo someRepo : someRepos) {
             Set<RepoBuild.Commit> repoCommits = someRepo.getBuildsStatus().getBuilds()
                     .stream().map(RepoBuild::getCommit).collect(Collectors.toSet());
-            Set<String> repoShas = someRepo.getBuildsStatus().getBuilds()
-                    .stream().map(x -> x.getCommit().getSha()).collect(Collectors.toSet());
             commits.put(someRepo, repoCommits);
-            shas.put(someRepo, repoShas);
         }
 
-        Collections.sort(someRepos, (a, b) -> -compare(shas.get(a).size(), shas.get(b).size()));
+        Collections.sort(someRepos, (a, b) -> -compare(countShasWithoutStats(commits.get(a)), countShasWithoutStats(commits.get(b))));
 
         for (int i = 0; i < REPOS_PROCESSED; i++) {
             TravisRepo repo = someRepos.get(i);
 
-            System.out.println("[commit stat] inspecting repo " + repo.getSlug() + " (" + shas.size() + " SHAs)");
+            System.out.println("[commit stat] inspecting repo " + repo.getSlug());
             try {
                 try (GitRepoHandle git = GitRepo.grab(repo.getSlug())) {
                     Map<String, RepoCommitStatistic> statCache = new HashMap<>();
 
                     for (RepoBuild.Commit commit : commits.get(repo)) {
-                        String sha = commit.getSha();
+                        if (commit.getStats() == null) {
+                            String sha = commit.getSha();
 
-                        RepoCommitStatistic stats = statCache.get(sha);
-                        if (stats != null) {
-                            System.out.println("[commit stat] reusing commit " + sha);
-                        } else {
-                            System.out.println("[commit stat] inspecting commit " + sha);
-                            try {
-                                stats = stat(git, sha);
-                            } catch (Throwable t) {
-                                System.out.println("[commit stat] exception while inspecting " + repo.getSlug() + " sha " + sha);
-                                stats = new RepoCommitStatistic(-1, -1);
+                            RepoCommitStatistic stats = statCache.get(sha);
+                            if (stats != null) {
+                                System.out.println("[commit stat] reusing commit " + sha);
+                            } else {
+                                System.out.println("[commit stat] inspecting commit " + sha);
+                                try {
+                                    stats = stat(git, sha);
+                                } catch (Throwable t) {
+                                    System.out.println("[commit stat] exception while inspecting " + repo.getSlug() + " sha " + sha);
+                                    stats = new RepoCommitStatistic(-1, -1);
+                                }
+                                statCache.put(sha, stats);
                             }
-                            statCache.put(sha, stats);
+                            commit.setStats(stats);
+                            travisRepoService.save(repo);
                         }
-                        commit.setStats(stats);
-                        travisRepoService.save(repo);
                     }
                 }
 
@@ -78,6 +76,12 @@ public class CommitStatisticsJob {
                 t.printStackTrace();
             }
         }
+    }
+
+    private int countShasWithoutStats(Set<RepoBuild.Commit> commits) {
+        return (int) commits.stream()
+                .filter(commit -> commit.getStats() == null)
+                .map(RepoBuild.Commit::getSha).count();
     }
 
     private static List<TravisRepo> filterReposWithAllCommits(List<TravisRepo> someRepos) {
