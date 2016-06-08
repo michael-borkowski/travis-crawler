@@ -14,20 +14,18 @@ public class StatisticJob {
     @Autowired
     private TravisRepoService travisRepoService;
 
+    @SuppressWarnings("ConstantConditions")
     @Scheduled(fixedDelay = 30000, initialDelay = 0)
     public void printStatistics() {
         long buildSum = 0;
         long repoCount = 0;
         long reposWithSize = 0;
-        long reposWithSizeAndBuilds = 0;
         long oversizeRepos = 0;
         long okSizeRepos = 0;
         String maxSizeRepo = null;
         long maxSize = 0;
         long done = 0;
         long zombies = 0;
-
-        long reposWithBuildsNoInfo = 0, reposWithInfoNoBuilds = 0;
 
         long buildsWithRealStats = 0;
         long buildsWithFailedStats = 0;
@@ -61,9 +59,8 @@ public class StatisticJob {
                     if (travisRepo.getInfo().getSize() > maxSize) {
                         maxSize = travisRepo.getInfo().getSize();
                         maxSizeRepo = travisRepo.getSlug();
-                    } else if (travisRepo.getBuildsStatus().getBuilds().size() > 0) reposWithSizeAndBuilds++;
-                    else reposWithInfoNoBuilds++;
-                } else if (travisRepo.getBuildsStatus().getBuilds().size() > 0) reposWithBuildsNoInfo++;
+                    }
+                }
 
                 if (travisRepo.getBuildsStatus().getBuilds().size() > 0) {
                     boolean someStats = false;
@@ -78,29 +75,23 @@ public class StatisticJob {
 
                     if (someStats && !allStats) {
                         reposWithBuildsSomeStats++;
-                        if(!travisRepo.getInfo().isOutdated()) reposWithBuildsSomeStatsInfo++;
-                    }
-                    else if (!someStats) {
+                        if (!travisRepo.getInfo().isOutdated()) reposWithBuildsSomeStatsInfo++;
+                    } else if (!someStats) {
                         reposWithBuildsNoStats++;
-                        if(!travisRepo.getInfo().isOutdated()) reposWithBuildsNoStatsInfo++;
-                    }
-                    else reposWithBuildsAllStats++;
-                }
-                else reposWithNoBuilds++;
+                        if (!travisRepo.getInfo().isOutdated()) reposWithBuildsNoStatsInfo++;
+                    } else reposWithBuildsAllStats++;
+                } else reposWithNoBuilds++;
             }
         }
 
         System.out.println("[stat] ==========================================================================");
         System.out.println("[stat] = REPOS                                                                  =");
         System.out.println("[stat] ==========================================================================");
-        System.out.println("[stat] repos: " + repoCount);
+        System.out.println("[stat] total repos: " + repoCount);
         System.out.println("[stat] repo info known for " + reposWithSize + " (" + percent(reposWithSize, repoCount) + ")");
         System.out.println("[stat] repo size ok: " + okSizeRepos + " (" + percent(okSizeRepos, repoCount) + "); oversize repos: " + oversizeRepos + " (" + percent(oversizeRepos, repoCount) + ")");
         if (maxSizeRepo != null) System.out.println("[stat] biggest repo: " + maxSizeRepo + " (" + maxSize + ")");
         System.out.println("[stat] zombies: " + zombies + " (" + percent(zombies, repoCount) + ")");
-        System.out.println("[stat] repos with info and builds: " + reposWithSizeAndBuilds);
-        System.out.println("[stat] repos with builds but no info: " + reposWithBuildsNoInfo);
-        System.out.println("[stat] repos with info but no builds: " + reposWithInfoNoBuilds);
         System.out.println("[stat] repos with end reached: " + done + " (" + percent(done, repoCount) + ")");
         System.out.println("[stat]");
         System.out.println("[stat] repos without builds:                     " + reposWithNoBuilds + " (" + percent(reposWithNoBuilds, repoCount) + ")");
@@ -113,7 +104,7 @@ public class StatisticJob {
         System.out.println("[stat] ==========================================================================");
         System.out.println("[stat] = BUILDS                                                                 =");
         System.out.println("[stat] ==========================================================================");
-        System.out.println("[stat] total builds " + buildSum);
+        System.out.println("[stat] total builds: " + buildSum);
         System.out.println("[stat] builds with stats: " + buildsWithRealStats + " (" + percent(buildsWithRealStats, buildSum) + ")");
         System.out.println("[stat]      failed stats: " + buildsWithFailedStats + " (" + percent(buildsWithFailedStats, buildSum) + ")");
         System.out.println("[stat] average builds per repo: " + (int) ((double) buildSum / repoCount));

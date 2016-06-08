@@ -49,7 +49,7 @@ public class CallCountJob {
         previousTravisCallCount1 = travisService.getCallCount();
 
         githubCallCount1 = githubService.getCallCount() - previousGithubCallCount1;
-        previousGithubCallCount1 = travisService.getCallCount();
+        previousGithubCallCount1 = githubService.getCallCount();
     }
 
     @Scheduled(fixedRate = 5 * 60_000)
@@ -58,7 +58,7 @@ public class CallCountJob {
         previousTravisCallCount5 = travisService.getCallCount();
 
         githubCallCount5 = githubService.getCallCount() - previousGithubCallCount5;
-        previousGithubCallCount5 = travisService.getCallCount();
+        previousGithubCallCount5 = githubService.getCallCount();
     }
 
     @Scheduled(fixedRate = 10 * 60_000)
@@ -66,7 +66,7 @@ public class CallCountJob {
         travisCallCount10 = travisService.getCallCount() - previousTravisCallCount10;
         previousTravisCallCount10 = travisService.getCallCount();
 
-        githubCallCount10 = githubService.getCallCount() - previousGithubCallCount10    ;
-        previousGithubCallCount10 = travisService.getCallCount();
+        githubCallCount10 = githubService.getCallCount() - previousGithubCallCount10;
+        previousGithubCallCount10 = githubService.getCallCount();
     }
 }
