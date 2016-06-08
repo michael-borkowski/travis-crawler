@@ -27,7 +27,7 @@ public class TravisRepo {
     private long seenByMiner;
 
     private RepoBuildsStatus buildsStatus = new RepoBuildsStatus();
-    private RepoInfo info = null;
+    private RepoInfo info = new RepoInfo();
 
     private boolean zombie = false;
 

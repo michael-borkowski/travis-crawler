@@ -31,12 +31,22 @@ public class CommitStatisticsJob {
 
     @Scheduled(fixedDelay = 10_000, initialDelay = 0)
     public void countCommitSizes() {
-        List<TravisRepo> someRepos = travisRepoService.find200WithInfo();
-        System.out.println("[commit stat] initial finding: " + someRepos.size());
+        int initial = 0;
+        int ac = -1, bc = -1;
+        List<TravisRepo> someRepos = null;
+        for (int i = 0; i < 100; i++) {
+            someRepos = travisRepoService.find200WithInfo();
+            initial = someRepos.size();
 
-        someRepos = filterNonZombies(someRepos);
-        someRepos = filterReposWithUnanalyzedBuilds(someRepos);
-        someRepos = filterReposBelowSizeThreshold(someRepos);
+            someRepos = filterNonZombies(someRepos);
+            ac = someRepos.size();
+            someRepos = filterReposWithUnanalyzedBuilds(someRepos);
+            bc  = someRepos.size();
+            someRepos = filterReposBelowSizeThreshold(someRepos);
+
+            if (someRepos.size() > 0) break;
+        }
+        System.out.println("[commit stat] initial finding: " + initial);
 
         Map<TravisRepo, Set<RepoBuild.Commit>> commits = new HashMap<>();
         for (TravisRepo someRepo : someRepos) {
@@ -48,15 +58,17 @@ public class CommitStatisticsJob {
         Collections.sort(someRepos, (a, b) -> -compare(countShasWithoutStats(commits.get(a)), countShasWithoutStats(commits.get(b))));
 
         if (someRepos.size() == 0) {
-            System.out.println("[commit stat] no repos found to inspect");
+            System.out.println("[commit stat] no repos found to inspect (" + ac + ", " + bc + ")");
             return;
         }
 
         System.out.println("[commit stat] inspecting (up to) " + REPOS_PROCESSED + " out of " + someRepos.size() + " grabbed repos with info");
+        int addedTotal = 0;
 
         for (int i = 0; i < REPOS_PROCESSED; i++) {
             if (i >= someRepos.size()) break;
             TravisRepo repo = someRepos.get(i);
+            int added = 0, notFound = 0, otherErrors = 0;
 
             System.out.println("[commit stat] inspecting repo " + repo.getSlug() + " (size " + repo.getInfo().getSize() + ")");
             try {
@@ -80,27 +92,38 @@ public class CommitStatisticsJob {
                                             System.out.println("[commit stat] exception while inspecting " + repo.getSlug() + " sha " + sha);
                                             t.printStackTrace();
                                         }
+                                        otherErrors++;
+                                    } else {
                                         stats = new RepoCommitStatistic(-1, -1);
+                                        notFound++;
                                     }
                                 }
-                                statCache.put(sha, stats);
+                                if (stats != null) statCache.put(sha, stats);
                             }
-                            commit.setStats(stats);
-                            travisRepoService.save(repo);
+                            if (stats != null) {
+                                commit.setStats(stats);
+                                added++;
+                                addedTotal++;
+                                travisRepoService.save(repo);
+                            }
                         }
                     }
                 }
+
+                System.out.println("[commit stat] added " + added + " commit stats (out of whch " + notFound + " were not-found; " + otherErrors + " other errors occurred) to " + repo.getSlug());
 
             } catch (Throwable t) {
                 System.out.println("[commit stat] exception while inspecting " + repo.getSlug());
                 t.printStackTrace();
             }
         }
+
+        System.out.println("[commit stat] added " + addedTotal + " commit stats in total");
     }
 
     private List<TravisRepo> filterReposBelowSizeThreshold(List<TravisRepo> someRepos) {
         return someRepos.stream()
-                .filter(someRepo -> someRepo.getInfo() != null && someRepo.getInfo().getSize() < SIZE_THRESHOLD)
+                .filter(someRepo -> !someRepo.getInfo().isOutdated() && someRepo.getInfo().getSize() < SIZE_THRESHOLD)
                 .collect(toCollection(LinkedList::new));
     }
 
@@ -113,7 +136,7 @@ public class CommitStatisticsJob {
     private int countShasWithoutStats(Set<RepoBuild.Commit> commits) {
         return (int) commits.stream()
                 .filter(commit -> commit.getStats() == null)
-                .map(RepoBuild.Commit::getSha).count();
+                .map(RepoBuild.Commit::getSha).distinct().count();
     }
 
     private static List<TravisRepo> filterReposWithUnanalyzedBuilds(List<TravisRepo> someRepos) {

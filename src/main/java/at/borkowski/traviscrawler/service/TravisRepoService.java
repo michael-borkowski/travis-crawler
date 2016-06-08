@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static at.borkowski.traviscrawler.util.StaticRandom.nextLong;
 
@@ -47,8 +48,21 @@ public class TravisRepoService {
         return travisRepoRepository.findAll();
     }
 
-    public List<TravisRepo> find50WithoutInfoNotZombie() {
-        return travisRepoRepository.findFirst50ByInfoIsNullAndZombieIsFalse();
+    public List<TravisRepo> findSomeWithoutInfoNotZombie(int count) {
+        List<TravisRepo> some = findSome(count);
+        List<TravisRepo> ret = new LinkedList<>();
+
+        int retries = 0;
+        while (ret.size() < count) {
+            int prev = ret.size();
+            ret.addAll(some.stream()
+                    .filter(travisRepo ->
+                            travisRepo.getInfo().isOutdated() && !travisRepo.isZombie())
+                    .collect(Collectors.toList()));
+            if (ret.size() == prev && retries++ >= 5) break;
+        }
+
+        return ret;
     }
 
     public List<TravisRepo> find200WithInfo() {

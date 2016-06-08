@@ -30,6 +30,6 @@ public class RepoInfo {
     }
 
     public boolean isOutdated() {
-        return currentTimeMillis() - infoDate.getTime() > MAX_AGE;
+        return infoDate == null || currentTimeMillis() - infoDate.getTime() > MAX_AGE;
     }
 }
