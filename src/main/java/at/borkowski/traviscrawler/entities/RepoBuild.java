@@ -19,7 +19,7 @@ public class RepoBuild {
     private List<String> script;
     private List<String> os;
     private String group;
-    private String dist;
+    private List<String> dist;
     private Date startedAt;
     private Date finishedAt;
     private Long duration;
@@ -72,7 +72,6 @@ public class RepoBuild {
         private String compareUrl;
         private Long pullRequestNumber;
 
-        private RepoCommitStatistic statistic;
         private RepoCommitStatistic stats = null;
 
         public Commit() {

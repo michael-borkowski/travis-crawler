@@ -14,7 +14,8 @@ public class TravisBuildConfigDTO {
     @JsonDeserialize(using = OptionalArrayDeserializer.class)
     private List<String> os;
     private String group;
-    private String dist;
+    @JsonDeserialize(using = OptionalArrayDeserializer.class)
+    private List<String> dist;
 
     public String getLanguage() {
         return language;
@@ -32,7 +33,7 @@ public class TravisBuildConfigDTO {
         return group;
     }
 
-    public String getDist() {
+    public List<String> getDist() {
         return dist;
     }
 }

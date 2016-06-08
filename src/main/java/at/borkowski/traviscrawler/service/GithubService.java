@@ -1,7 +1,9 @@
 package at.borkowski.traviscrawler.service;
 
 import at.borkowski.traviscrawler.dto.GithubLimitDTO;
+import at.borkowski.traviscrawler.dto.GithubRepoInfoDTO;
 import at.borkowski.traviscrawler.entities.GithubRate;
+import at.borkowski.traviscrawler.entities.RepoInfo;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -44,10 +46,13 @@ public class GithubService {
     private <T> T exchange(HttpMethod method, String url, Class<T> clazz, boolean throttle) {
         if (throttle) throttle();
 
+
         HttpHeaders headers = new HttpHeaders();
+        headers.set("User-Agent", "michael-borkowski");
         HttpEntity entity = new HttpEntity(headers);
         char sep = url.contains("?") ? '&' : '?';
-        HttpEntity<T> response = restTemplate.exchange("https://api.github.com" + url + sep + "client_id=" + clientId + "&client_secret=" + clientSecret, method, entity, clazz);
+        url = "https://api.github.com" + url + sep + "client_id=" + clientId + "&client_secret=" + clientSecret;
+        HttpEntity<T> response = restTemplate.exchange(url, method, entity, clazz);
         callCount++;
         return response.getBody();
     }
@@ -79,5 +84,10 @@ public class GithubService {
     public GithubRate getRateStatus() {
         GithubLimitDTO limitDTO = exchange(GET, "/rate_limit", GithubLimitDTO.class, false);
         return new GithubRate(limitDTO.resources.core.limit, limitDTO.resources.core.remaining, limitDTO.resources.core.reset);
+    }
+
+    public RepoInfo getInfo(String slug) {
+        GithubRepoInfoDTO infoDTO = exchange(GET, "/repos/" + slug, GithubRepoInfoDTO.class, true);
+        return new RepoInfo(infoDTO);
     }
 }

@@ -16,20 +16,24 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.compare;
+import static java.util.stream.Collectors.toCollection;
 
 @Service
 public class CommitStatisticsJob {
-    public static final int REPOS_GRABBED = 50;
     public static final int REPOS_PROCESSED = 3;
+    private static final long SIZE_THRESHOLD = 1024 * 200; // 200 MB in KB
 
     @Autowired
     private TravisRepoService travisRepoService;
 
+    private static final boolean print = false;
+
     @Scheduled(fixedDelay = 10_000, initialDelay = 0)
     public void countCommitSizes() {
-        List<TravisRepo> someRepos = travisRepoService.findSome(REPOS_GRABBED);
+        List<TravisRepo> someRepos = travisRepoService.find50WithInfo();
 
         someRepos = filterReposWithAllCommits(someRepos);
+        someRepos = filterReposBelowSizeThreshold(someRepos);
 
         Map<TravisRepo, Set<RepoBuild.Commit>> commits = new HashMap<>();
         for (TravisRepo someRepo : someRepos) {
@@ -40,10 +44,15 @@ public class CommitStatisticsJob {
 
         Collections.sort(someRepos, (a, b) -> -compare(countShasWithoutStats(commits.get(a)), countShasWithoutStats(commits.get(b))));
 
+        if (someRepos.size() == 0) return;
+
+        System.out.println("[commit stat] inspecting (up to) " + REPOS_PROCESSED + " out of " + someRepos.size() + " grabbed repos with info");
+
         for (int i = 0; i < REPOS_PROCESSED; i++) {
+            if (i >= someRepos.size()) break;
             TravisRepo repo = someRepos.get(i);
 
-            System.out.println("[commit stat] inspecting repo " + repo.getSlug());
+            System.out.println("[commit stat] inspecting repo " + repo.getSlug() + " (size " + repo.getInfo().getSize() + ")");
             try {
                 try (GitRepoHandle git = GitRepo.grab(repo.getSlug())) {
                     Map<String, RepoCommitStatistic> statCache = new HashMap<>();
@@ -54,13 +63,15 @@ public class CommitStatisticsJob {
 
                             RepoCommitStatistic stats = statCache.get(sha);
                             if (stats != null) {
-                                System.out.println("[commit stat] reusing commit " + sha);
+                                if (print) System.out.println("[commit stat] reusing commit " + sha);
                             } else {
-                                System.out.println("[commit stat] inspecting commit " + sha);
+                                if (print) System.out.println("[commit stat] inspecting commit " + sha);
                                 try {
                                     stats = stat(git, sha);
                                 } catch (Throwable t) {
-                                    System.out.println("[commit stat] exception while inspecting " + repo.getSlug() + " sha " + sha);
+                                    if (print)
+                                        System.out.println("[commit stat] exception while inspecting " + repo.getSlug() + " sha " + sha);
+                                    t.printStackTrace();
                                     stats = new RepoCommitStatistic(-1, -1);
                                 }
                                 statCache.put(sha, stats);
@@ -76,6 +87,12 @@ public class CommitStatisticsJob {
                 t.printStackTrace();
             }
         }
+    }
+
+    private List<TravisRepo> filterReposBelowSizeThreshold(List<TravisRepo> someRepos) {
+        return someRepos.stream()
+                .filter(someRepo -> someRepo.getInfo() != null && someRepo.getInfo().getSize() < SIZE_THRESHOLD)
+                .collect(toCollection(LinkedList::new));
     }
 
     private int countShasWithoutStats(Set<RepoBuild.Commit> commits) {

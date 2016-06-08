@@ -7,6 +7,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 
+import static java.lang.System.currentTimeMillis;
+
 @Document
 public class TravisRepo {
     @Id
@@ -25,6 +27,7 @@ public class TravisRepo {
     private long seenByMiner;
 
     private RepoBuildsStatus buildsStatus = new RepoBuildsStatus();
+    private RepoInfo info = null;
 
     public TravisRepo() {
     }
@@ -58,4 +61,13 @@ public class TravisRepo {
     public String getSlug() {
         return slug;
     }
+
+    public RepoInfo getInfo() {
+        return info;
+    }
+
+    public void setInfo(RepoInfo info) {
+        this.info = info;
+    }
 }
+
