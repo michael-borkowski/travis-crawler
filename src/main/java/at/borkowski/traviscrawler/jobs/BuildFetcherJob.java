@@ -31,6 +31,8 @@ public class BuildFetcherJob {
         System.out.println("[builds] crawling over " + repos.size() + " repos");
 
         for (TravisRepo repo : repos) {
+            if(repo.isZombie()) continue;
+
             List<RepoBuild> builds = repo.getBuildsStatus().getBuilds();
             if (repo.getBuildsStatus().isFirstReached()) {
                 String latestBuild = builds.size() == 0 ? null : builds.get(0).getNumber();

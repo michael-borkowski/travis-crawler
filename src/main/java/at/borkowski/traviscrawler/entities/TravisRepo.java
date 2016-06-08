@@ -29,6 +29,8 @@ public class TravisRepo {
     private RepoBuildsStatus buildsStatus = new RepoBuildsStatus();
     private RepoInfo info = null;
 
+    private boolean zombie = false;
+
     public TravisRepo() {
     }
 
@@ -68,6 +70,14 @@ public class TravisRepo {
 
     public void setInfo(RepoInfo info) {
         this.info = info;
+    }
+
+    public void setZombie(boolean zombie) {
+        this.zombie = zombie;
+    }
+
+    public boolean isZombie() {
+        return zombie;
     }
 }
 

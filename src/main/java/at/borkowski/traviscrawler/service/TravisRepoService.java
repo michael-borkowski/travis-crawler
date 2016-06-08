@@ -47,11 +47,11 @@ public class TravisRepoService {
         return travisRepoRepository.findAll();
     }
 
-    public List<TravisRepo> find50WithoutInfo() {
-        return travisRepoRepository.findFirst50ByInfoIsNull();
+    public List<TravisRepo> find50WithoutInfoNotZombie() {
+        return travisRepoRepository.findFirst50ByInfoIsNullAndZombieIsFalse();
     }
 
-    public List<TravisRepo> find50WithInfo() {
-        return travisRepoRepository.findFirst50ByInfoIsNotNull();
+    public List<TravisRepo> find200WithInfo() {
+        return travisRepoRepository.findFirst200ByInfoIsNotNull();
     }
 }

@@ -31,6 +31,6 @@ public class GithubRate {
 
     @Override
     public String toString() {
-        return "remaining: " + remaining + " / " + limit + ", reset at " + reset + " (in " + getSecondsUntilReset() + ")";
+        return "remaining: " + remaining + " / " + limit + ", reset at " + reset + " (in " + getSecondsUntilReset() + " s)";
     }
 }

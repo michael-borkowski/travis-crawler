@@ -7,6 +7,7 @@ import at.borkowski.traviscrawler.git.GitRepo;
 import at.borkowski.traviscrawler.git.GitRepoHandle;
 import at.borkowski.traviscrawler.service.TravisRepoService;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.JGitInternalException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,8 +21,8 @@ import static java.util.stream.Collectors.toCollection;
 
 @Service
 public class CommitStatisticsJob {
-    public static final int REPOS_PROCESSED = 3;
-    private static final long SIZE_THRESHOLD = 1024 * 200; // 200 MB in KB
+    public static final int REPOS_PROCESSED = 5;
+    public static final long SIZE_THRESHOLD = 1024 * 200; // 200 MB in KB
 
     @Autowired
     private TravisRepoService travisRepoService;
@@ -30,9 +31,11 @@ public class CommitStatisticsJob {
 
     @Scheduled(fixedDelay = 10_000, initialDelay = 0)
     public void countCommitSizes() {
-        List<TravisRepo> someRepos = travisRepoService.find50WithInfo();
+        List<TravisRepo> someRepos = travisRepoService.find200WithInfo();
+        System.out.println("[commit stat] initial finding: " + someRepos.size());
 
-        someRepos = filterReposWithAllCommits(someRepos);
+        someRepos = filterNonZombies(someRepos);
+        someRepos = filterReposWithUnanalyzedBuilds(someRepos);
         someRepos = filterReposBelowSizeThreshold(someRepos);
 
         Map<TravisRepo, Set<RepoBuild.Commit>> commits = new HashMap<>();
@@ -44,7 +47,10 @@ public class CommitStatisticsJob {
 
         Collections.sort(someRepos, (a, b) -> -compare(countShasWithoutStats(commits.get(a)), countShasWithoutStats(commits.get(b))));
 
-        if (someRepos.size() == 0) return;
+        if (someRepos.size() == 0) {
+            System.out.println("[commit stat] no repos found to inspect");
+            return;
+        }
 
         System.out.println("[commit stat] inspecting (up to) " + REPOS_PROCESSED + " out of " + someRepos.size() + " grabbed repos with info");
 
@@ -69,10 +75,13 @@ public class CommitStatisticsJob {
                                 try {
                                     stats = stat(git, sha);
                                 } catch (Throwable t) {
-                                    if (print)
-                                        System.out.println("[commit stat] exception while inspecting " + repo.getSlug() + " sha " + sha);
-                                    t.printStackTrace();
-                                    stats = new RepoCommitStatistic(-1, -1);
+                                    if (!(t instanceof JGitInternalException) || !("" + t.getMessage()).contains("Missing unknown ")) {
+                                        if (print) {
+                                            System.out.println("[commit stat] exception while inspecting " + repo.getSlug() + " sha " + sha);
+                                            t.printStackTrace();
+                                        }
+                                        stats = new RepoCommitStatistic(-1, -1);
+                                    }
                                 }
                                 statCache.put(sha, stats);
                             }
@@ -95,13 +104,19 @@ public class CommitStatisticsJob {
                 .collect(toCollection(LinkedList::new));
     }
 
+    private List<TravisRepo> filterNonZombies(List<TravisRepo> someRepos) {
+        return someRepos.stream()
+                .filter(someRepo -> !someRepo.isZombie())
+                .collect(toCollection(LinkedList::new));
+    }
+
     private int countShasWithoutStats(Set<RepoBuild.Commit> commits) {
         return (int) commits.stream()
                 .filter(commit -> commit.getStats() == null)
                 .map(RepoBuild.Commit::getSha).count();
     }
 
-    private static List<TravisRepo> filterReposWithAllCommits(List<TravisRepo> someRepos) {
+    private static List<TravisRepo> filterReposWithUnanalyzedBuilds(List<TravisRepo> someRepos) {
         List<TravisRepo> ret = new LinkedList<>();
         for (TravisRepo someRepo : someRepos) {
             boolean ok = false;

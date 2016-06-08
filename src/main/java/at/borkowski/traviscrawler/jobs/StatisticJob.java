@@ -17,7 +17,12 @@ public class StatisticJob {
         long buildSum = 0;
         long repoCount = 0;
         long reposWithSize = 0;
+        long oversizeRepos = 0;
+        long okSizeRepos = 0;
+        String maxSizeRepo = null;
+        long maxSize = 0;
         int done = 0;
+        int zombies = 0;
 
         long buildsWithRealStats = 0;
         long buildsWithFailedStats = 0;
@@ -26,18 +31,33 @@ public class StatisticJob {
             buildSum += travisRepo.getBuildsStatus().getBuilds().size();
             repoCount++;
 
-            done += travisRepo.getBuildsStatus().isFirstReached() ? 1 : 0;
+            if (travisRepo.isZombie()) zombies++;
+            else {
+                done += travisRepo.getBuildsStatus().isFirstReached() ? 1 : 0;
 
-            for (RepoBuild repoBuild : travisRepo.getBuildsStatus().getBuilds())
-                if (repoBuild.getCommit().getStats() != null)
-                    if (repoBuild.getCommit().getStats().getFileCount() >= 0) buildsWithRealStats++;
-                    else buildsWithFailedStats++;
+                for (RepoBuild repoBuild : travisRepo.getBuildsStatus().getBuilds())
+                    if (repoBuild.getCommit().getStats() != null)
+                        if (repoBuild.getCommit().getStats().getFileCount() >= 0) buildsWithRealStats++;
+                        else buildsWithFailedStats++;
 
-            reposWithSize += (travisRepo.getInfo() == null || travisRepo.getInfo().isOutdated()) ? 0 : 1;
+                if (travisRepo.getInfo() != null && !travisRepo.getInfo().isOutdated()) {
+                    reposWithSize++;
+                    if (travisRepo.getInfo().getSize() > CommitStatisticsJob.SIZE_THRESHOLD) oversizeRepos++;
+                    else okSizeRepos++;
+
+                    if (travisRepo.getInfo().getSize() > maxSize) {
+                        maxSize = travisRepo.getInfo().getSize();
+                        maxSizeRepo = travisRepo.getSlug();
+                    }
+                }
+            }
         }
 
         System.out.println("[stat] repos: " + repoCount + ", builds: " + buildSum + " (" + (int) ((double) buildSum / repoCount) + " avg builds) done " + done);
         System.out.println("[stat] total builds " + buildSum + ", with real stats " + buildsWithRealStats + " (failed " + buildsWithFailedStats + ")");
         System.out.println("[stat] repo info known for " + reposWithSize + " out of " + repoCount);
+        System.out.println("[stat] repo size ok: " + okSizeRepos + "; oversize repos: " + oversizeRepos);
+        if (maxSizeRepo != null) System.out.println("[stat] biggest repo: " + maxSizeRepo + " (" + maxSize + ")");
+        System.out.println("[stat] zombies: " + zombies);
     }
 }

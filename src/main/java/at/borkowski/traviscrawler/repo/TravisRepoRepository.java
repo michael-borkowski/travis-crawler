@@ -15,7 +15,7 @@ public interface TravisRepoRepository extends MongoRepository<TravisRepo, String
     @Query("{ 'randomId' : { $lt: ?0 } }")
     TravisRepo findCeiling(long randomId);
 
-    List<TravisRepo> findFirst50ByInfoIsNull();
+    List<TravisRepo> findFirst50ByInfoIsNullAndZombieIsFalse();
 
-    List<TravisRepo> findFirst50ByInfoIsNotNull();
+    List<TravisRepo> findFirst200ByInfoIsNotNull();
 }

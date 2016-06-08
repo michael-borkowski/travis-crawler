@@ -19,13 +19,15 @@ public class RepoInfoJob {
     @Autowired
     private GithubService githubService;
 
-    @Scheduled(fixedDelay = 5000, initialDelay = 0)
+    @Scheduled(fixedDelay = 30_000, initialDelay = 0)
     public void fetchBuilds() {
-        List<TravisRepo> repos = travisRepoService.find50WithoutInfo();
-        System.out.println("[repo info] checking " + repos.size() + " repos");
+        List<TravisRepo> repos = travisRepoService.find50WithoutInfoNotZombie();
         int done = 0;
+        int notFound = 0;
 
         for (TravisRepo repo : repos) {
+            if (repo.isZombie()) continue; // should not happen, query excludes zombies
+
             try {
                 repo.setInfo(githubService.getInfo(repo.getSlug()));
                 travisRepoService.save(repo);
@@ -33,10 +35,14 @@ public class RepoInfoJob {
             } catch (Throwable t) {
                 if (!(t instanceof HttpClientErrorException) || !((HttpClientErrorException) t).getStatusCode().equals(HttpStatus.NOT_FOUND)) {
                     System.out.println("[repo info] exception while fetching repo info for " + repo.getSlug());
+                } else {
+                    repo.setZombie(true);
+                    travisRepoService.save(repo);
+                    notFound++;
                 }
             }
         }
 
-        System.out.println("[repo info] done " + done);
+        System.out.println("[repo info] grabbed " + repos.size() + ", done " + done + " (marked " + notFound + " new zombies)");
     }
 }
