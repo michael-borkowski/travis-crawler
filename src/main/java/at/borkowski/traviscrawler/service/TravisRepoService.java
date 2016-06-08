@@ -49,11 +49,11 @@ public class TravisRepoService {
     }
 
     public List<TravisRepo> findSomeWithoutInfoNotZombie(int count) {
-        List<TravisRepo> some = findSome(count);
         List<TravisRepo> ret = new LinkedList<>();
 
         int retries = 0;
         while (ret.size() < count) {
+            List<TravisRepo> some = findSome(count);
             int prev = ret.size();
             ret.addAll(some.stream()
                     .filter(travisRepo ->

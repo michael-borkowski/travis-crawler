@@ -21,7 +21,7 @@ public class RepoInfoJob {
 
     @Scheduled(fixedDelay = 30_000, initialDelay = 0)
     public void fetchBuilds() {
-        List<TravisRepo> repos = travisRepoService.findSomeWithoutInfoNotZombie(100);
+        List<TravisRepo> repos = travisRepoService.findSomeWithoutInfoNotZombie(50);
 
         repos.sort((a, b) -> (a.getBuildsStatus() != null && b.getBuildsStatus() != null ?
                 -Integer.compare(a.getBuildsStatus().getBuilds().size(), b.getBuildsStatus().getBuilds().size()) :
