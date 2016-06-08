@@ -27,11 +27,14 @@ public class BuildFetcherJob {
     @Scheduled(fixedDelay = 5000, initialDelay = 0)
     public void fetchBuilds() {
         List<TravisRepo> repos = travisRepoService.findSome(50);
+
+        repos.sort((a, b) -> a.getInfo() == null && b.getInfo() != null ? 1 : (a.getInfo() != null && b.getInfo() == null ? -1 : 0));
+
         int buildsAdded = 0;
         System.out.println("[builds] crawling over " + repos.size() + " repos");
 
         for (TravisRepo repo : repos) {
-            if(repo.isZombie()) continue;
+            if (repo.isZombie()) continue;
 
             List<RepoBuild> builds = repo.getBuildsStatus().getBuilds();
             if (repo.getBuildsStatus().isFirstReached()) {

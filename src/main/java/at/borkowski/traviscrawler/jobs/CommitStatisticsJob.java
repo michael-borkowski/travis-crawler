@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toCollection;
 
 @Service
 public class CommitStatisticsJob {
+    public static final int REPOS_GRABBED = 100;
     public static final int REPOS_PROCESSED = 5;
     public static final long SIZE_THRESHOLD = 1024 * 200; // 200 MB in KB
 
@@ -35,7 +36,7 @@ public class CommitStatisticsJob {
         int ac = -1, bc = -1;
         List<TravisRepo> someRepos = null;
         for (int i = 0; i < 100; i++) {
-            someRepos = travisRepoService.find200WithInfo();
+            someRepos = travisRepoService.findWithInfo(REPOS_GRABBED);
             initial = someRepos.size();
 
             someRepos = filterNonZombies(someRepos);

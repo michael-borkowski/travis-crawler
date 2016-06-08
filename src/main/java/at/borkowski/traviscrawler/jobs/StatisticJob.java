@@ -33,7 +33,9 @@ public class StatisticJob {
         long buildsWithFailedStats = 0;
 
         long reposWithBuildsNoStats = 0;
+        long reposWithBuildsNoStatsInfo = 0;
         long reposWithBuildsSomeStats = 0;
+        long reposWithBuildsSomeStatsInfo = 0;
         long reposWithBuildsAllStats = 0;
         long reposWithNoBuilds = 0;
 
@@ -74,17 +76,23 @@ public class StatisticJob {
                         if (!allStats && someStats) break;
                     }
 
-                    if (someStats && !allStats) reposWithBuildsSomeStats++;
-                    else if (!someStats) reposWithBuildsNoStats++;
+                    if (someStats && !allStats) {
+                        reposWithBuildsSomeStats++;
+                        if(!travisRepo.getInfo().isOutdated()) reposWithBuildsSomeStatsInfo++;
+                    }
+                    else if (!someStats) {
+                        reposWithBuildsNoStats++;
+                        if(!travisRepo.getInfo().isOutdated()) reposWithBuildsNoStatsInfo++;
+                    }
                     else reposWithBuildsAllStats++;
                 }
                 else reposWithNoBuilds++;
             }
         }
 
-        System.out.println("[stat] =========================================");
-        System.out.println("[stat] = REPOS                                 =");
-        System.out.println("[stat] =========================================");
+        System.out.println("[stat] ==========================================================================");
+        System.out.println("[stat] = REPOS                                                                  =");
+        System.out.println("[stat] ==========================================================================");
         System.out.println("[stat] repos: " + repoCount);
         System.out.println("[stat] repo info known for " + reposWithSize + " (" + percent(reposWithSize, repoCount) + ")");
         System.out.println("[stat] repo size ok: " + okSizeRepos + " (" + percent(okSizeRepos, repoCount) + "); oversize repos: " + oversizeRepos + " (" + percent(oversizeRepos, repoCount) + ")");
@@ -95,21 +103,23 @@ public class StatisticJob {
         System.out.println("[stat] repos with info but no builds: " + reposWithInfoNoBuilds);
         System.out.println("[stat] repos with end reached: " + done + " (" + percent(done, repoCount) + ")");
         System.out.println("[stat]");
-        System.out.println("[stat] repos without builds:              " + reposWithNoBuilds + " (" + percent(reposWithNoBuilds, repoCount) + ")");
-        System.out.println("[stat] repos with builds, no build stats: " + reposWithBuildsNoStats + " (" + percent(reposWithBuildsNoStats, repoCount) + ")");
-        System.out.println("[stat] repos with some build stats:       " + reposWithBuildsSomeStats + " (" + percent(reposWithBuildsSomeStats, repoCount) + ")");
-        System.out.println("[stat] repos with some all stats:         " + reposWithBuildsAllStats + " (" + percent(reposWithBuildsAllStats, repoCount) + ")");
+        System.out.println("[stat] repos without builds:                     " + reposWithNoBuilds + " (" + percent(reposWithNoBuilds, repoCount) + ")");
+        System.out.println("[stat] repos with builds, no build stats:        " + reposWithBuildsNoStats + " (" + percent(reposWithBuildsNoStats, repoCount) + ")");
+        System.out.println("[stat] repos with builds, no build stats (info): " + reposWithBuildsNoStatsInfo + " (" + percent(reposWithBuildsNoStatsInfo, repoCount) + ")");
+        System.out.println("[stat] repos with some build stats:              " + reposWithBuildsSomeStats + " (" + percent(reposWithBuildsSomeStats, repoCount) + ")");
+        System.out.println("[stat] repos with some build stats (info):       " + reposWithBuildsSomeStatsInfo + " (" + percent(reposWithBuildsSomeStatsInfo, repoCount) + ")");
+        System.out.println("[stat] repos with some all stats:                " + reposWithBuildsAllStats + " (" + percent(reposWithBuildsAllStats, repoCount) + ")");
         System.out.println("[stat]");
-        System.out.println("[stat] =========================================");
-        System.out.println("[stat] = BUILDS                                =");
-        System.out.println("[stat] =========================================");
+        System.out.println("[stat] ==========================================================================");
+        System.out.println("[stat] = BUILDS                                                                 =");
+        System.out.println("[stat] ==========================================================================");
         System.out.println("[stat] total builds " + buildSum);
         System.out.println("[stat] builds with stats: " + buildsWithRealStats + " (" + percent(buildsWithRealStats, buildSum) + ")");
         System.out.println("[stat]      failed stats: " + buildsWithFailedStats + " (" + percent(buildsWithFailedStats, buildSum) + ")");
         System.out.println("[stat] average builds per repo: " + (int) ((double) buildSum / repoCount));
         System.out.println("[stat]");
         System.out.println("[stat] duration: " + (currentTimeMillis() - a) + " ms");
-        System.out.println("[stat] =========================================");
+        System.out.println("[stat] ==========================================================================");
     }
 
     private String percent(long a, long b) {
