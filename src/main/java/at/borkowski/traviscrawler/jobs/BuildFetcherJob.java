@@ -93,7 +93,13 @@ public class BuildFetcherJob {
                 else buildsDto.builds.stream()
                         .filter(build -> build.getFinishedAt() != null)
                         .forEach(build -> builds.add(new RepoBuild(build, commits)));
-                travisRepoService.save(repo);
+
+                try {
+                    travisRepoService.save(repo);
+                } catch (Throwable t) {
+                    System.out.println("current repo: " + repo.getSlug());
+                    throw t;
+                }
 
                 buildsAdded += buildsDto.builds.size();
             }

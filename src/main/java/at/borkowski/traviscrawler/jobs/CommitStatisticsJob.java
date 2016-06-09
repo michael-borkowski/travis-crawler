@@ -111,7 +111,7 @@ public class CommitStatisticsJob {
                     }
                 }
 
-                System.out.println("[commit stat] added " + added + " commit stats (out of whch " + notFound + " were not-found; " + otherErrors + " other errors occurred) to " + repo.getSlug());
+                System.out.println("[commit stat] added " + added + " commit stats (out of which " + notFound + " were not-found; " + otherErrors + " other errors occurred) to " + repo.getSlug());
 
             } catch (Throwable t) {
                 System.out.println("[commit stat] exception while inspecting " + repo.getSlug());
