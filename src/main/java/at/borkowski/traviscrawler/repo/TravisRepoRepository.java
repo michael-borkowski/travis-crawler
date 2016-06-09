@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public interface TravisRepoRepository extends MongoRepository<TravisRepo, String> {
     TravisRepo findByTravisId(long id);
@@ -18,4 +19,7 @@ public interface TravisRepoRepository extends MongoRepository<TravisRepo, String
     List<TravisRepo> findFirst50ByInfoIsNullAndZombieNot(boolean zombie);
 
     List<TravisRepo> findFirst200ByInfoIsNotNull();
+
+    @Query("{ }")
+    Stream<TravisRepo> findAllAndStream();
 }

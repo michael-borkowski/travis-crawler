@@ -19,6 +19,10 @@ public class GithubRepoInfoDTO {
         return size;
     }
 
+    public String getLanguage() {
+        return language;
+    }
+
     public static class Owner {
 
     }

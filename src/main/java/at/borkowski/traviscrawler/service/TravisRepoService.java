@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static at.borkowski.traviscrawler.util.StaticRandom.nextLong;
 
@@ -45,8 +46,8 @@ public class TravisRepoService {
         return ret;
     }
 
-    public List<TravisRepo> findAll() {
-        return travisRepoRepository.findAll();
+    public Stream<TravisRepo> findAll() {
+        return travisRepoRepository.findAllAndStream();
     }
 
     public List<TravisRepo> findSomeWithoutInfoNotZombie(int count) {

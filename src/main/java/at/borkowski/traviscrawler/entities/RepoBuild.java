@@ -59,6 +59,14 @@ public class RepoBuild {
         return commit;
     }
 
+    public Long getDuration() {
+        return duration;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
     public static class Commit {
         private long id;
         private String sha;
