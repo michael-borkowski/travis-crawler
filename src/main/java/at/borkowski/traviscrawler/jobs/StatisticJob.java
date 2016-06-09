@@ -20,10 +20,10 @@ public class StatisticJob {
     @Autowired
     private TravisRepoService travisRepoService;
 
-    private static final String EXPORT_PATH = "/home/michael/research/ml/travis-export/";
-    private static final String EXPORT_FILE_BASE = "export";
-    private static final String EXPORT_PROGRESS_SUFFIX = "-progress";
-    private static final String EXPORT_FILE_EXTENSION = ".csv";
+    public static final String EXPORT_PATH = "/home/michael/research/ml/travis-export/";
+    public static final String EXPORT_FILE_BASE = "export";
+    public static final String EXPORT_PROGRESS_SUFFIX = "-progress";
+    public static final String EXPORT_FILE_EXTENSION = ".csv";
 
     @SuppressWarnings("ConstantConditions")
     @Scheduled(fixedDelay = 30000, initialDelay = 0)
@@ -146,6 +146,7 @@ public class StatisticJob {
         if (travisRepo.isZombie()) return;
         travisRepo.getBuildsStatus().getBuilds().forEach(build -> {
             if (build.getCommit().getStats() == null) return;
+            if (build.getDuration() == null) return;
             RepoBuild.Commit commit = build.getCommit();
             RepoCommitStatistic stats = commit.getStats();
             out.printf("%d;%s;%s;%s;%s;%d;%d;%d", travisRepo.getTravisId(), travisRepo.getSlug(), build.getLanguage(), build.getNumber(), commit.getSha(), stats.getFileCount(), stats.getTotalSize(), build.getDuration());
