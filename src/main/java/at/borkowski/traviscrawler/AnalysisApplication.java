@@ -3,6 +3,7 @@ package at.borkowski.traviscrawler;
 import at.borkowski.traviscrawler.analysis.CSVLine;
 import at.borkowski.traviscrawler.analysis.Scatterplot;
 import at.borkowski.traviscrawler.jobs.StatisticJob;
+import at.borkowski.traviscrawler.ml.MachineLearning;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.xy.XYSeries;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
 
 import static java.lang.Long.compare;
 import static java.util.stream.Collectors.toList;
@@ -57,12 +59,25 @@ public class AnalysisApplication {
             Scatterplot scatterplotFileCount = new Scatterplot();
             Scatterplot scatterplotSize = new Scatterplot();
 
-            lines.stream()
+            List<CSVLine> pre = lines.stream()
                     .filter(line -> line.getRepo().equals(repo))
-                    .forEach(line -> {
-                        scatterplotFileCount.addPoint(new Scatterplot.Point(line.getFileCount(), line.getDuration()));
-                        scatterplotSize.addPoint(new Scatterplot.Point(line.getSize(), line.getDuration()));
-                    });
+                    .collect(toList());
+
+            Quantiles qFileCount = Quantiles.from(pre, CSVLine::getFileCount);
+            Quantiles qSize = Quantiles.from(pre, CSVLine::getSize);
+            Quantiles qDuration = Quantiles.from(pre, CSVLine::getDuration);
+
+            pre.stream()
+                    .filter(qFileCount::accepts)
+                    .filter(qDuration::accepts)
+                    .forEach(line -> scatterplotFileCount.addPoint(new Scatterplot.Point(line.getFileCount(), line.getDuration())));
+
+            pre.stream()
+                    .filter(qSize::accepts)
+                    .filter(qDuration::accepts)
+                    .forEach(line -> scatterplotSize.addPoint(new Scatterplot.Point(line.getSize(), line.getDuration())));
+
+            MachineLearning.analyze(scatterplotFileCount);
 
             save(scatterplotFileCount, PLOT_BASE + "repo/" + nice(repo) + "-fileCount", repo, "file count");
             save(scatterplotSize, PLOT_BASE + "repo/" + nice(repo) + "-size", repo, "size");
@@ -80,12 +95,24 @@ public class AnalysisApplication {
             Scatterplot scatterplotFileCount = new Scatterplot();
             Scatterplot scatterplotSize = new Scatterplot();
 
-            lines.stream()
+
+            List<CSVLine> pre = lines.stream()
                     .filter(line -> line.getLanguage().equals(language))
-                    .forEach(line -> {
-                        scatterplotFileCount.addPoint(new Scatterplot.Point(line.getFileCount(), line.getDuration()));
-                        scatterplotSize.addPoint(new Scatterplot.Point(line.getSize(), line.getDuration()));
-                    });
+                    .collect(toList());
+
+            Quantiles qFileCount = Quantiles.from(pre, CSVLine::getFileCount);
+            Quantiles qSize = Quantiles.from(pre, CSVLine::getSize);
+            Quantiles qDuration = Quantiles.from(pre, CSVLine::getDuration);
+
+            pre.stream()
+                    .filter(qFileCount::accepts)
+                    .filter(qDuration::accepts)
+                    .forEach(line -> scatterplotFileCount.addPoint(new Scatterplot.Point(line.getFileCount(), line.getDuration())));
+
+            pre.stream()
+                    .filter(qSize::accepts)
+                    .filter(qDuration::accepts)
+                    .forEach(line -> scatterplotSize.addPoint(new Scatterplot.Point(line.getFileCount(), line.getDuration())));
 
             save(scatterplotFileCount, PLOT_BASE + "lang/" + nice(language) + "-fileCount", language, "file count");
             save(scatterplotSize, PLOT_BASE + "lang/" + nice(language) + "-size", language, "size");
@@ -159,5 +186,51 @@ public class AnalysisApplication {
         }
     }
 
+    private static class Quantiles {
+        public static final double DROP_Q = 0.05;
+        public static final int MIN_ELEMENTS = 100;
 
+        private final Series series;
+        private final Function<CSVLine, Long> f;
+
+        private Quantiles(Series series, Function<CSVLine, Long> f) {
+            this.series = series;
+            this.f = f;
+        }
+
+        public static Quantiles from(List<CSVLine> lines, Function<CSVLine, Long> f) {
+            Series series = new Series();
+            lines.forEach(x -> series.numbers.add(f.apply(x)));
+            return new Quantiles(series, f);
+        }
+
+        public boolean accepts(CSVLine line) {
+            if (series.numbers.size() < MIN_ELEMENTS) return true;
+            long q0 = series.getQuantile(DROP_Q);
+            long q1 = series.getQuantile(1 - DROP_Q);
+            long v = f.apply(line);
+            return v >= q0 && v <= q1;
+        }
+    }
+
+    private static class Series {
+        private final TreeSet<Long> numbers = new TreeSet<>((a, b) -> {
+            int compare = Long.compare(a, b);
+            return compare == 0 ? 1 : compare;
+        });
+
+        public long getQuantile(double q) {
+            int element;
+            Iterator<Long> iterator;
+            if (q <= 0.5) {
+                iterator = numbers.iterator();
+                element = (int) (q * numbers.size());
+            } else {
+                iterator = numbers.descendingIterator();
+                element = (int) ((1 - q) * numbers.size());
+            }
+            for (int i = 0; i < element; i++) iterator.next();
+            return iterator.hasNext() ? iterator.next() : numbers.last();
+        }
+    }
 }
