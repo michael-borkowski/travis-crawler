@@ -190,24 +190,30 @@ public class AnalysisApplication {
         public static final double DROP_Q = 0.05;
         public static final int MIN_ELEMENTS = 100;
 
-        private final Series series;
         private final Function<CSVLine, Long> f;
 
-        private Quantiles(Series series, Function<CSVLine, Long> f) {
-            this.series = series;
+        private final long q0, q1;
+        private final int n;
+
+        public Quantiles(int n, long q0, long q1, Function<CSVLine, Long> f) {
+            this.n = n;
+            this.q0 = q0;
+            this.q1 = q1;
             this.f = f;
         }
 
         public static Quantiles from(List<CSVLine> lines, Function<CSVLine, Long> f) {
             Series series = new Series();
             lines.forEach(x -> series.numbers.add(f.apply(x)));
-            return new Quantiles(series, f);
+
+            long q0 = series.getQuantile(DROP_Q);
+            long q1 = series.getQuantile(1 - DROP_Q);
+
+            return new Quantiles(lines.size(), q0, q1, f);
         }
 
         public boolean accepts(CSVLine line) {
-            if (series.numbers.size() < MIN_ELEMENTS) return true;
-            long q0 = series.getQuantile(DROP_Q);
-            long q1 = series.getQuantile(1 - DROP_Q);
+            if (n < MIN_ELEMENTS) return true;
             long v = f.apply(line);
             return v >= q0 && v <= q1;
         }

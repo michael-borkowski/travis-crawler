@@ -28,7 +28,7 @@ public class BuildFetcherJob {
     public void fetchBuilds() {
         List<TravisRepo> repos = travisRepoService.findSome(50);
 
-        repos.sort((a, b) -> a.getInfo() == null && b.getInfo() != null ? 1 : (a.getInfo() != null && b.getInfo() == null ? -1 : 0));
+        repos.sort((a, b) -> -Integer.compare(a.getBuildsStatus().getBuilds().size(), b.getBuildsStatus().getBuilds().size()));
 
         int buildsAdded = 0;
         System.out.println("[builds] crawling over " + repos.size() + " repos");
