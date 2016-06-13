@@ -47,6 +47,7 @@ public class StatisticJob {
         final long[] reposWithBuildsSomeStatsInfo = {0};
         final long[] reposWithBuildsAllStats = {0};
         final long[] reposWithNoBuilds = {0};
+        final long[] reposWithNoBuildsInfo = {0};
         long a = currentTimeMillis();
 
         //noinspection ResultOfMethodCallIgnored
@@ -98,7 +99,8 @@ public class StatisticJob {
                             reposWithBuildsNoStats[0]++;
                             if (!travisRepo.getInfo().isOutdated()) reposWithBuildsNoStatsInfo[0]++;
                         } else reposWithBuildsAllStats[0]++;
-                    } else reposWithNoBuilds[0]++;
+                    } else if (!travisRepo.getInfo().isOutdated()) reposWithNoBuildsInfo[0]++;
+                    else reposWithNoBuilds[0]++;
                 }
             });
         } catch (IOException e) {
@@ -122,6 +124,7 @@ public class StatisticJob {
         System.out.println("[stat] repos with end reached: " + done[0] + " (" + percent(done[0], repoCount[0]) + ")");
         System.out.println("[stat]");
         System.out.println("[stat] repos without builds:                     " + reposWithNoBuilds[0] + " (" + percent(reposWithNoBuilds[0], repoCount[0]) + ")");
+        System.out.println("[stat] repos without builds (info):              " + reposWithNoBuildsInfo[0] + " (" + percent(reposWithNoBuildsInfo[0], repoCount[0]) + ")");
         System.out.println("[stat] repos with builds, no build stats:        " + reposWithBuildsNoStats[0] + " (" + percent(reposWithBuildsNoStats[0], repoCount[0]) + ")");
         System.out.println("[stat] repos with builds, no build stats (info): " + reposWithBuildsNoStatsInfo[0] + " (" + percent(reposWithBuildsNoStatsInfo[0], repoCount[0]) + ")");
         System.out.println("[stat] repos with some build stats:              " + reposWithBuildsSomeStats[0] + " (" + percent(reposWithBuildsSomeStats[0], repoCount[0]) + ")");
