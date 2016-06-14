@@ -35,6 +35,8 @@ public class GithubService {
     private final Object lock = new Object();
     private long nextClear = currentTimeMillis();
 
+    private long lastRemaining, lastRemainingChange, lastRemainingChangeInterval;
+
     private RestTemplate restTemplate = new RestTemplate();
 
     private long callCount;
@@ -73,8 +75,10 @@ public class GithubService {
 
     @Scheduled(fixedRate = 15_000)
     public void adjustInterval() {
-        interval = getRateStatus().getIntervalMilliseconds() * 10 / 9;
-        System.out.println("[github] API interval is " + interval + " ms");
+        long interval_ = getRateStatus().getIntervalMilliseconds();
+        interval = 900;
+        //interval = interval_;
+        System.out.println("[github] API interval is " + interval + " ms (would be " + interval_ + " ms) -- last increase was " + (currentTimeMillis() - lastRemainingChange) / 1000 + " s ago, last interval was " + lastRemainingChangeInterval / 1000 + " s");
     }
 
     public long getCallCount() {
@@ -83,6 +87,11 @@ public class GithubService {
 
     public GithubRate getRateStatus() {
         GithubLimitDTO limitDTO = exchange(GET, "/rate_limit", GithubLimitDTO.class, false);
+        if (limitDTO.resources.core.remaining > lastRemaining) {
+            if (lastRemainingChange != 0) lastRemainingChangeInterval = currentTimeMillis() - lastRemainingChange;
+            lastRemainingChange = currentTimeMillis();
+        }
+        lastRemaining = limitDTO.resources.core.remaining;
         return new GithubRate(limitDTO.resources.core.limit, limitDTO.resources.core.remaining, limitDTO.resources.core.reset);
     }
 

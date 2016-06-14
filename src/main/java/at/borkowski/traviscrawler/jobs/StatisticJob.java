@@ -35,6 +35,7 @@ public class StatisticJob {
         final long[] okSizeRepos = {0};
         final String[] maxSizeRepo = {null};
         final long[] maxSize = {0};
+        final long[] maxSizeTimestamp = {0};
         final long[] done = {0};
         final long[] zombies = {0};
 
@@ -78,6 +79,7 @@ public class StatisticJob {
                         if (travisRepo.getInfo().getSize() > maxSize[0]) {
                             maxSize[0] = travisRepo.getInfo().getSize();
                             maxSizeRepo[0] = travisRepo.getSlug();
+                            maxSizeTimestamp[0] = travisRepo.getInfo().getInfoDate().getTime();
                         }
                     }
 
@@ -119,7 +121,7 @@ public class StatisticJob {
         System.out.println("[stat] repo info known for " + reposWithSize[0] + " (" + percent(reposWithSize[0], repoCount[0]) + ")");
         System.out.println("[stat] repo size ok: " + okSizeRepos[0] + " (" + percent(okSizeRepos[0], repoCount[0]) + "); oversize repos: " + oversizeRepos[0] + " (" + percent(oversizeRepos[0], repoCount[0]) + ")");
         if (maxSizeRepo[0] != null)
-            System.out.println("[stat] biggest repo: " + maxSizeRepo[0] + " (" + maxSize[0] + ")");
+            System.out.println("[stat] biggest repo: " + maxSizeRepo[0] + " (" + maxSize[0] + "; age " + (currentTimeMillis() - maxSizeTimestamp[0]) / 1000 + " s)");
         System.out.println("[stat] zombies: " + zombies[0] + " (" + percent(zombies[0], repoCount[0]) + ")");
         System.out.println("[stat] repos with end reached: " + done[0] + " (" + percent(done[0], repoCount[0]) + ")");
         System.out.println("[stat]");

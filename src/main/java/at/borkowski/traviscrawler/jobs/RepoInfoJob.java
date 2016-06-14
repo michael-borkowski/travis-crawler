@@ -11,6 +11,8 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.List;
 
+import static java.lang.System.currentTimeMillis;
+
 @Service
 public class RepoInfoJob {
     @Autowired
@@ -19,9 +21,11 @@ public class RepoInfoJob {
     @Autowired
     private GithubService githubService;
 
-    @Scheduled(fixedDelay = 30_000, initialDelay = 0)
+    @Scheduled(fixedDelay = 10_000, initialDelay = 0)
     public void fetchBuilds() {
+        long aa = currentTimeMillis();
         List<TravisRepo> repos = travisRepoService.findSomeWithoutInfoNotZombie(50);
+        long bb = currentTimeMillis();
 
         repos.sort((a, b) -> (a.getBuildsStatus() != null && b.getBuildsStatus() != null ?
                 -Integer.compare(a.getBuildsStatus().getBuilds().size(), b.getBuildsStatus().getBuilds().size()) :
@@ -49,6 +53,6 @@ public class RepoInfoJob {
             }
         }
 
-        System.out.println("[repo info] grabbed " + repos.size() + ", done " + done + " (marked " + notFound + " new zombies)");
+        System.out.println("[repo info] grabbed " + repos.size() + ", done " + done + " (marked " + notFound + " new zombies) -- took " + (currentTimeMillis() - aa) / 1000 + " s (first part: " + (bb - aa) / 1000 + " s)");
     }
 }

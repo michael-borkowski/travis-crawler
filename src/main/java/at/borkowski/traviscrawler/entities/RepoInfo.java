@@ -11,7 +11,7 @@ public class RepoInfo {
 
     private Date infoDate;
 
-    public static long MAX_AGE = 3600 * 24 * 14; // 14 days
+    public static long MAX_AGE = 1000 * 3600 * 24 * 14; // 14 days
 
     public RepoInfo() {
     }
