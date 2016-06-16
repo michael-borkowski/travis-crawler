@@ -101,8 +101,10 @@ public class StatisticJob {
                             reposWithBuildsNoStats[0]++;
                             if (!travisRepo.getInfo().isOutdated()) reposWithBuildsNoStatsInfo[0]++;
                         } else reposWithBuildsAllStats[0]++;
-                    } else if (!travisRepo.getInfo().isOutdated()) reposWithNoBuildsInfo[0]++;
-                    else reposWithNoBuilds[0]++;
+                    } else {
+                        if (!travisRepo.getInfo().isOutdated()) reposWithNoBuildsInfo[0]++;
+                        else reposWithNoBuilds[0]++;
+                    }
                 }
             });
         } catch (IOException e) {

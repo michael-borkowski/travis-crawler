@@ -12,6 +12,7 @@ public class RepoInfo {
     private Date infoDate;
 
     public static long MAX_AGE = 1000 * 3600 * 24 * 14; // 14 days
+    public static long OLD_AGE = 1000 * 3600 * 24 * 10; // 10 days
 
     public RepoInfo() {
     }
@@ -31,5 +32,9 @@ public class RepoInfo {
 
     public boolean isOutdated() {
         return infoDate == null || currentTimeMillis() - infoDate.getTime() > MAX_AGE;
+    }
+
+    public boolean isOld() {
+        return infoDate == null || currentTimeMillis() - infoDate.getTime() > OLD_AGE;
     }
 }

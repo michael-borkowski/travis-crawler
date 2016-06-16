@@ -76,8 +76,7 @@ public class GithubService {
     @Scheduled(fixedRate = 15_000)
     public void adjustInterval() {
         long interval_ = getRateStatus().getIntervalMilliseconds();
-        interval = 900;
-        //interval = interval_;
+        interval = Math.min(800, interval_);
         System.out.println("[github] API interval is " + interval + " ms (would be " + interval_ + " ms) -- last increase was " + (currentTimeMillis() - lastRemainingChange) / 1000 + " s ago, last interval was " + lastRemainingChangeInterval / 1000 + " s");
     }
 

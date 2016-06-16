@@ -24,13 +24,12 @@ public class RepoInfoJob {
     @Scheduled(fixedDelay = 10_000, initialDelay = 0)
     public void fetchBuilds() {
         long aa = currentTimeMillis();
-        List<TravisRepo> repos = travisRepoService.findSomeWithoutInfoNotZombie(50);
+        List<TravisRepo> repos = travisRepoService.findSomeWithOldInfoNotZombie(50);
         long bb = currentTimeMillis();
 
-        repos.sort((a, b) -> (a.getBuildsStatus() != null && b.getBuildsStatus() != null ?
-                -Integer.compare(a.getBuildsStatus().getBuilds().size(), b.getBuildsStatus().getBuilds().size()) :
-                (a.getBuildsStatus() != null ? 1 :
-                        (b.getBuildsStatus() != null ? -1 : 0))));
+        repos.sort((a, b) -> (a.getInfo().getInfoDate() == null ? -1 :
+                (b.getInfo().getInfoDate() == null ? 1 :
+                        (a.getInfo().getInfoDate().compareTo(b.getInfo().getInfoDate())))));
 
         int done = 0;
         int notFound = 0;

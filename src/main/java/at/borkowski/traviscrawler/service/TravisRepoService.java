@@ -50,8 +50,8 @@ public class TravisRepoService {
         return travisRepoRepository.findAllAndStream();
     }
 
-    public List<TravisRepo> findSomeWithoutInfoNotZombie(int count) {
-        return find(travisRepo -> travisRepo.getInfo().isOutdated() && !travisRepo.isZombie(), count);
+    public List<TravisRepo> findSomeWithOldInfoNotZombie(int count) {
+        return find(travisRepo -> travisRepo.getInfo().isOld() && !travisRepo.isZombie(), count);
     }
 
     public List<TravisRepo> findWithInfo(int count) {
@@ -66,7 +66,7 @@ public class TravisRepoService {
             List<TravisRepo> some = findSome(count);
             int prev = ret.size();
             ret.addAll(some.stream().filter(predicate).collect(Collectors.toList()));
-            if (ret.size() == prev && retries++ >= 5) break;
+            if (ret.size() == prev && retries++ >= 20) break;
         }
 
         return ret;
